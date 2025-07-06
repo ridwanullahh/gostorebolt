@@ -30,7 +30,7 @@ export const config = {
   app: {
     name: 'GoStore',
     version: '1.0.0',
-    domain: 'gostore.com',
+    domain: import.meta.env.VITE_APP_DOMAIN || 'gostore.com',
     supportEmail: 'support@gostore.com',
   },
 };
@@ -49,7 +49,11 @@ export const validateConfig = () => {
   if (missing.length > 0) {
     console.warn('Missing environment variables:', missing);
     console.warn('Please set these in your .env file for full functionality');
+    console.warn('The platform will work with demo data until these are configured');
   }
   
   return missing.length === 0;
 };
+
+// Initialize config validation
+validateConfig();

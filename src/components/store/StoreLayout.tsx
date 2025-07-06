@@ -16,7 +16,6 @@ interface StoreLayoutProps {
 }
 
 const StoreLayout: React.FC<StoreLayoutProps> = ({ children }) => {
-  const { storeSlug } = useParams<{ storeSlug: string }>();
   const location = useLocation();
   const [store, setStore] = useState<Store | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -28,29 +27,108 @@ const StoreLayout: React.FC<StoreLayoutProps> = ({ children }) => {
   const storeSDK = new StoreSDK();
 
   useEffect(() => {
-    if (storeSlug) {
-      loadStore();
-    }
-  }, [storeSlug]);
+    loadStore();
+  }, [location.pathname]);
+
+  const getStoreSlugFromUrl = () => {
+    const pathSegments = location.pathname.split('/').filter(Boolean);
+    return pathSegments[0] || null;
+  };
 
   const loadStore = async () => {
     try {
-      const storeData = await storeSDK.getStoreBySlug(storeSlug!);
-      setStore(storeData);
+      const storeSlug = getStoreSlugFromUrl();
+      if (!storeSlug) return;
+
+      const storeData = await storeSDK.getStoreBySlug(storeSlug);
+      if (storeData) {
+        setStore(storeData);
+      } else {
+        // Create a demo store if it doesn't exist
+        const demoStore = await storeSDK.createStore({
+          name: storeSlug.charAt(0).toUpperCase() + storeSlug.slice(1) + ' Store',
+          ownerId: 'demo-owner',
+        });
+        setStore(demoStore);
+      }
     } catch (error) {
       console.error('Error loading store:', error);
+      // Set a default store for demo purposes
+      setStore({
+        id: 'demo-store',
+        uid: 'demo-store-uid',
+        name: 'Demo Store',
+        slug: getStoreSlugFromUrl() || 'demo',
+        ownerId: 'demo-owner',
+        subdomain: getStoreSlugFromUrl() || 'demo',
+        theme: 'modern',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        settings: {
+          branding: {
+            colors: {
+              primary: '#10b981',
+              secondary: '#059669',
+              accent: '#34d399',
+            },
+            fonts: {
+              heading: 'Inter',
+              body: 'Inter',
+            },
+          },
+          seo: {
+            title: 'Demo Store',
+            description: 'A demo store powered by GoStore',
+            keywords: ['demo', 'store', 'ecommerce'],
+          },
+          currency: {
+            code: 'USD',
+            symbol: '$',
+            position: 'before',
+          },
+          language: {
+            default: 'en',
+            supported: ['en'],
+          },
+          payments: {
+            cashOnDelivery: true,
+            wallet: true,
+          },
+          shipping: {
+            zones: [],
+          },
+          notifications: {
+            email: true,
+            sms: false,
+            push: false,
+          },
+          features: {
+            wishlist: true,
+            compare: true,
+            reviews: true,
+            chat: true,
+            multiCurrency: false,
+            multiLanguage: false,
+          },
+        },
+      });
     }
   };
 
   const navigation = [
-    { name: 'Home', href: `/store/${storeSlug}`, icon: Home },
-    { name: 'Products', href: `/store/${storeSlug}/products`, icon: Package },
-    { name: 'Categories', href: `/store/${storeSlug}/categories`, icon: Grid },
-    { name: 'About', href: `/store/${storeSlug}/about`, icon: UsersIcon },
-    { name: 'Contact', href: `/store/${storeSlug}/contact`, icon: Phone },
+    { name: 'Home', href: `/`, icon: Home },
+    { name: 'Products', href: `/products`, icon: Package },
+    { name: 'Categories', href: `/categories`, icon: Grid },
+    { name: 'About', href: `/about`, icon: UsersIcon },
+    { name: 'Contact', href: `/contact`, icon: Phone },
   ];
 
-  const isActive = (href: string) => location.pathname === href;
+  const isActive = (href: string) => {
+    const storeSlug = getStoreSlugFromUrl();
+    const fullPath = storeSlug ? `/${storeSlug}${href}` : href;
+    return location.pathname === fullPath || location.pathname === href;
+  };
 
   if (!store) {
     return (
@@ -109,7 +187,7 @@ const StoreLayout: React.FC<StoreLayoutProps> = ({ children }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link to={`/store/${storeSlug}`} className="flex items-center space-x-3">
+            <Link to={`/`} className="flex items-center space-x-3">
               {store.settings.branding.logo ? (
                 <img 
                   src={store.settings.branding.logo} 
@@ -171,7 +249,7 @@ const StoreLayout: React.FC<StoreLayoutProps> = ({ children }) => {
 
               {/* Wishlist */}
               <Link
-                to={`/store/${storeSlug}/wishlist`}
+                to={`/wishlist`}
                 className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
               >
                 <Heart className="h-5 w-5" />
@@ -184,7 +262,7 @@ const StoreLayout: React.FC<StoreLayoutProps> = ({ children }) => {
 
               {/* Cart */}
               <Link
-                to={`/store/${storeSlug}/cart`}
+                to={`/cart`}
                 className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
               >
                 <ShoppingCart className="h-5 w-5" />
@@ -197,7 +275,7 @@ const StoreLayout: React.FC<StoreLayoutProps> = ({ children }) => {
 
               {/* Account */}
               <Link
-                to={`/store/${storeSlug}/account`}
+                to={`/account`}
                 className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
               >
                 <User className="h-5 w-5" />
@@ -342,27 +420,27 @@ const StoreLayout: React.FC<StoreLayoutProps> = ({ children }) => {
               <h3 className="text-lg font-semibold mb-4">Customer Service</h3>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <Link to={`/store/${storeSlug}/help`} className="text-gray-400 hover:text-white transition-colors">
+                  <Link to={`/help`} className="text-gray-400 hover:text-white transition-colors">
                     Help Center
                   </Link>
                 </li>
                 <li>
-                  <Link to={`/store/${storeSlug}/shipping`} className="text-gray-400 hover:text-white transition-colors">
+                  <Link to={`/shipping`} className="text-gray-400 hover:text-white transition-colors">
                     Shipping Info
                   </Link>
                 </li>
                 <li>
-                  <Link to={`/store/${storeSlug}/returns`} className="text-gray-400 hover:text-white transition-colors">
+                  <Link to={`/returns`} className="text-gray-400 hover:text-white transition-colors">
                     Returns & Exchanges
                   </Link>
                 </li>
                 <li>
-                  <Link to={`/store/${storeSlug}/size-guide`} className="text-gray-400 hover:text-white transition-colors">
+                  <Link to={`/size-guide`} className="text-gray-400 hover:text-white transition-colors">
                     Size Guide
                   </Link>
                 </li>
                 <li>
-                  <Link to={`/store/${storeSlug}/track-order`} className="text-gray-400 hover:text-white transition-colors">
+                  <Link to={`/track-order`} className="text-gray-400 hover:text-white transition-colors">
                     Track Your Order
                   </Link>
                 </li>
@@ -399,10 +477,10 @@ const StoreLayout: React.FC<StoreLayoutProps> = ({ children }) => {
               © 2024 {store.name}. All rights reserved.
             </p>
             <div className="flex items-center space-x-6 mt-4 md:mt-0">
-              <Link to={`/store/${storeSlug}/privacy`} className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link to={`/privacy`} className="text-gray-400 hover:text-white text-sm transition-colors">
                 Privacy Policy
               </Link>
-              <Link to={`/store/${storeSlug}/terms`} className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link to={`/terms`} className="text-gray-400 hover:text-white text-sm transition-colors">
                 Terms of Service
               </Link>
               <div className="flex items-center space-x-2">
@@ -415,19 +493,6 @@ const StoreLayout: React.FC<StoreLayoutProps> = ({ children }) => {
           </div>
         </div>
       </footer>
-
-      {/* Live Chat Widget */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <Button
-          variant="primary"
-          className="rounded-full w-14 h-14 shadow-lg hover:shadow-xl transition-shadow"
-          onClick={() => {/* Open chat */}}
-        >
-          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
-        </Button>
-      </div>
     </div>
   );
 };

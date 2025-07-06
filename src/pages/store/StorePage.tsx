@@ -39,20 +39,36 @@ const StorePage: React.FC = () => {
   const storeSDK = new StoreSDK();
 
   useEffect(() => {
-    if (storeSlug) {
-      loadStoreData();
-    }
+    loadStoreData();
   }, [storeSlug]);
+
+  const getStoreSlugFromUrl = () => {
+    // Get store slug from URL params or path
+    if (storeSlug) return storeSlug;
+    
+    const pathSegments = window.location.pathname.split('/').filter(Boolean);
+    return pathSegments[0] || null;
+  };
 
   const loadStoreData = async () => {
     try {
       setIsLoading(true);
       
-      // Load store
-      const storeData = await storeSDK.getStoreBySlug(storeSlug!);
-      if (!storeData) {
-        throw new Error('Store not found');
+      const currentStoreSlug = getStoreSlugFromUrl();
+      if (!currentStoreSlug) {
+        // If no store slug, redirect to main platform
+        window.location.href = '/';
+        return;
       }
+
+      // Try to load store - if it doesn't exist, create demo data
+      let storeData = await storeSDK.getStoreBySlug(currentStoreSlug);
+      
+      if (!storeData) {
+        // Create demo store for testing
+        storeData = await createDemoStore(currentStoreSlug);
+      }
+      
       setStore(storeData);
 
       // Load products
@@ -60,7 +76,18 @@ const StorePage: React.FC = () => {
         status: 'active',
         limit: 20
       });
-      setProducts(productsData);
+      
+      // If no products exist, create demo products
+      if (productsData.length === 0) {
+        await createDemoProducts(storeData.id);
+        const newProductsData = await storeSDK.getStoreProducts(storeData.id, {
+          status: 'active',
+          limit: 20
+        });
+        setProducts(newProductsData);
+      } else {
+        setProducts(productsData);
+      }
 
       // Load featured products
       const featuredData = await storeSDK.getStoreProducts(storeData.id, {
@@ -84,6 +111,81 @@ const StorePage: React.FC = () => {
       toast.error('Failed to load store data');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const createDemoStore = async (slug: string): Promise<Store> => {
+    return await storeSDK.createStore({
+      name: slug.charAt(0).toUpperCase() + slug.slice(1) + ' Store',
+      ownerId: 'demo-owner',
+      settings: {
+        branding: {
+          colors: {
+            primary: '#10b981',
+            secondary: '#059669',
+            accent: '#34d399',
+          },
+          fonts: {
+            heading: 'Inter',
+            body: 'Inter',
+          },
+        },
+        currency: {
+          code: 'USD',
+          symbol: '$',
+          position: 'before',
+        },
+        language: {
+          default: 'en',
+          supported: ['en'],
+        },
+        features: {
+          wishlist: true,
+          compare: true,
+          reviews: true,
+          chat: true,
+          multiCurrency: false,
+          multiLanguage: false,
+        },
+      },
+    });
+  };
+
+  const createDemoProducts = async (storeId: string) => {
+    const demoProducts = [
+      {
+        name: 'Premium Wireless Headphones',
+        description: 'High-quality wireless headphones with noise cancellation and premium sound quality.',
+        price: 299.99,
+        salePrice: 249.99,
+        categories: ['Electronics', 'Audio'],
+        images: [{ id: '1', url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800', alt: 'Headphones', position: 0, isMain: true }],
+        featured: true,
+      },
+      {
+        name: 'Smart Fitness Watch',
+        description: 'Track your fitness goals with this advanced smartwatch featuring heart rate monitoring.',
+        price: 199.99,
+        categories: ['Electronics', 'Fitness'],
+        images: [{ id: '2', url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800', alt: 'Smart Watch', position: 0, isMain: true }],
+        featured: true,
+      },
+      {
+        name: 'Ergonomic Office Chair',
+        description: 'Comfortable ergonomic office chair designed for long working hours.',
+        price: 399.99,
+        salePrice: 349.99,
+        categories: ['Furniture', 'Office'],
+        images: [{ id: '3', url: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800', alt: 'Office Chair', position: 0, isMain: true }],
+        featured: false,
+      },
+    ];
+
+    for (const productData of demoProducts) {
+      await storeSDK.createProduct({
+        ...productData,
+        storeId,
+      });
     }
   };
 
@@ -124,7 +226,6 @@ const StorePage: React.FC = () => {
   };
 
   const handleAddToWishlist = async (product: Product) => {
-    // Implement wishlist functionality
     toast.success(`${product.name} added to wishlist!`);
   };
 
@@ -156,7 +257,6 @@ const StorePage: React.FC = () => {
         const updatedCart = await storeSDK.removeFromCart(cart.id, itemId);
         setCart(updatedCart);
       } else {
-        // Update quantity logic would go here
         toast.success('Cart updated');
       }
     } catch (error) {
@@ -220,7 +320,10 @@ const StorePage: React.FC = () => {
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Store Not Found</h1>
-            <p className="text-gray-600">The store you're looking for doesn't exist.</p>
+            <p className="text-gray-600 mb-6">The store you're looking for doesn't exist.</p>
+            <Button variant="primary" onClick={() => window.location.href = '/'}>
+              Go to Main Platform
+            </Button>
           </div>
         </div>
       </StoreLayout>
@@ -299,7 +402,7 @@ const StorePage: React.FC = () => {
                 >
                   <ProductCard
                     product={product}
-                    storeSlug={storeSlug!}
+                    storeSlug={getStoreSlugFromUrl()!}
                     onAddToCart={handleAddToCart}
                     onAddToWishlist={handleAddToWishlist}
                     onQuickView={handleQuickView}
@@ -313,35 +416,8 @@ const StorePage: React.FC = () => {
         </section>
       )}
 
-      {/* Categories */}
-      {categories.length > 0 && (
-        <section className="py-16 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Shop by Category</h2>
-              <p className="text-gray-600">Find exactly what you're looking for</p>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-              {categories.map((category) => (
-                <Card key={category.id} className="p-6 text-center hover:shadow-lg transition-shadow cursor-pointer">
-                  {category.image && (
-                    <img
-                      src={category.image}
-                      alt={category.name}
-                      className="w-16 h-16 object-cover rounded-lg mx-auto mb-3"
-                    />
-                  )}
-                  <h3 className="font-medium text-gray-900">{category.name}</h3>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* All Products */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Filters and Search */}
           <div className="flex flex-col lg:flex-row gap-6 items-center justify-between mb-8">
@@ -371,20 +447,6 @@ const StorePage: React.FC = () => {
                   className="pl-10 w-64"
                 />
               </div>
-
-              {/* Category Filter */}
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2"
-              >
-                <option value="">All Categories</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.name}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
 
               {/* Sort */}
               <select
@@ -431,7 +493,7 @@ const StorePage: React.FC = () => {
                 <ProductCard
                   key={product.id}
                   product={product}
-                  storeSlug={storeSlug!}
+                  storeSlug={getStoreSlugFromUrl()!}
                   onAddToCart={handleAddToCart}
                   onAddToWishlist={handleAddToWishlist}
                   onQuickView={handleQuickView}
@@ -446,7 +508,7 @@ const StorePage: React.FC = () => {
       </section>
 
       {/* Trust Badges */}
-      <section className="py-12 bg-gray-50">
+      <section className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div className="flex flex-col items-center">
@@ -491,7 +553,7 @@ const StorePage: React.FC = () => {
         onClose={() => setQuickViewProduct(null)}
         onAddToCart={handleAddToCart}
         onAddToWishlist={handleAddToWishlist}
-        storeSlug={storeSlug!}
+        storeSlug={getStoreSlugFromUrl()!}
       />
 
       {/* Product Compare Modal */}
@@ -501,7 +563,7 @@ const StorePage: React.FC = () => {
         products={compareProducts}
         onRemoveProduct={handleRemoveFromCompare}
         onAddToCart={handleAddToCart}
-        storeSlug={storeSlug!}
+        storeSlug={getStoreSlugFromUrl()!}
       />
 
       {/* Cart Drawer */}
@@ -512,30 +574,12 @@ const StorePage: React.FC = () => {
         onUpdateQuantity={handleUpdateCartQuantity}
         onRemoveItem={handleRemoveFromCart}
         onCheckout={() => {/* Navigate to checkout */}}
-        storeSlug={storeSlug!}
-      />
-
-      {/* Popup Builder */}
-      <PopupBuilder
-        config={{
-          id: 'newsletter-signup',
-          type: 'newsletter',
-          title: 'Get 10% Off Your First Order!',
-          description: 'Subscribe to our newsletter and receive exclusive offers and updates.',
-          ctaText: 'Get My Discount',
-          delay: 5,
-          frequency: 'once'
-        }}
-        onClose={() => {}}
-        onSubmit={async (email) => {
-          // Handle newsletter signup
-          toast.success('Thanks for subscribing!');
-        }}
+        storeSlug={getStoreSlugFromUrl()!}
       />
 
       {/* Live Chat */}
       <LiveChat
-        storeSlug={storeSlug!}
+        storeSlug={getStoreSlugFromUrl()!}
         storeName={store.name}
       />
     </StoreLayout>

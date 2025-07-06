@@ -28,27 +28,24 @@ import StoreAccountPage from './pages/store/StoreAccountPage';
 import './index.css';
 
 function App() {
-  // Check if this is a store subdomain
-  const hostname = window.location.hostname;
-  const isStoreSubdomain = hostname !== 'gostore.top' && hostname !== 'localhost' && hostname !== '127.0.0.1';
-  
-  // Extract store slug from URL path or subdomain
+  // Check if this is a store route based on URL path
   const getStoreSlug = () => {
-    if (isStoreSubdomain) {
-      // For subdomains like mystorename.gostore.top
-      return hostname.split('.')[0];
-    }
-    
-    // For paths like gostore.top/mystorename
     const pathSegments = window.location.pathname.split('/').filter(Boolean);
-    if (pathSegments.length > 0 && pathSegments[0] !== 'features' && pathSegments[0] !== 'pricing' && 
-        pathSegments[0] !== 'templates' && pathSegments[0] !== 'case-studies' && pathSegments[0] !== 'about' && 
-        pathSegments[0] !== 'contact' && pathSegments[0] !== 'login' && pathSegments[0] !== 'register' && 
-        pathSegments[0] !== 'dashboard') {
-      return pathSegments[0];
+    
+    // Platform routes that should NOT be treated as store routes
+    const platformRoutes = [
+      'features', 'pricing', 'templates', 'case-studies', 'about', 
+      'contact', 'login', 'register', 'dashboard', 'admin'
+    ];
+    
+    // Check if first segment is a platform route
+    if (pathSegments.length === 0 || platformRoutes.includes(pathSegments[0])) {
+      return null;
     }
     
-    return null;
+    // Check if this looks like a store route (not starting with known platform paths)
+    // Only treat as store if it's not a known platform route
+    return pathSegments[0];
   };
 
   const storeSlug = getStoreSlug();
@@ -59,24 +56,24 @@ function App() {
       <Router>
         <div className="App">
           <Routes>
-            <Route path="/" element={<StorePage />} />
-            <Route path="/product/:productSlug" element={<StoreProductPage />} />
-            <Route path="/products" element={<StorePage />} />
-            <Route path="/categories" element={<StorePage />} />
-            <Route path="/category/:categorySlug" element={<StorePage />} />
-            <Route path="/cart" element={<StoreCheckoutPage />} />
-            <Route path="/checkout" element={<StoreCheckoutPage />} />
-            <Route path="/account/*" element={<StoreAccountPage />} />
-            <Route path="/wishlist" element={<StorePage />} />
-            <Route path="/compare" element={<StorePage />} />
-            <Route path="/search" element={<StorePage />} />
-            <Route path="/about" element={<StorePage />} />
-            <Route path="/contact" element={<StorePage />} />
-            <Route path="/help" element={<StorePage />} />
-            <Route path="/shipping" element={<StorePage />} />
-            <Route path="/returns" element={<StorePage />} />
-            <Route path="/privacy" element={<StorePage />} />
-            <Route path="/terms" element={<StorePage />} />
+            <Route path={`/${storeSlug}`} element={<StorePage />} />
+            <Route path={`/${storeSlug}/product/:productSlug`} element={<StoreProductPage />} />
+            <Route path={`/${storeSlug}/products`} element={<StorePage />} />
+            <Route path={`/${storeSlug}/categories`} element={<StorePage />} />
+            <Route path={`/${storeSlug}/category/:categorySlug`} element={<StorePage />} />
+            <Route path={`/${storeSlug}/cart`} element={<StoreCheckoutPage />} />
+            <Route path={`/${storeSlug}/checkout`} element={<StoreCheckoutPage />} />
+            <Route path={`/${storeSlug}/account/*`} element={<StoreAccountPage />} />
+            <Route path={`/${storeSlug}/wishlist`} element={<StorePage />} />
+            <Route path={`/${storeSlug}/compare`} element={<StorePage />} />
+            <Route path={`/${storeSlug}/search`} element={<StorePage />} />
+            <Route path={`/${storeSlug}/about`} element={<StorePage />} />
+            <Route path={`/${storeSlug}/contact`} element={<StorePage />} />
+            <Route path={`/${storeSlug}/help`} element={<StorePage />} />
+            <Route path={`/${storeSlug}/shipping`} element={<StorePage />} />
+            <Route path={`/${storeSlug}/returns`} element={<StorePage />} />
+            <Route path={`/${storeSlug}/privacy`} element={<StorePage />} />
+            <Route path={`/${storeSlug}/terms`} element={<StorePage />} />
           </Routes>
           
           <Toaster 
@@ -126,6 +123,10 @@ function App() {
             
             {/* Dashboard */}
             <Route path="/dashboard/*" element={<DashboardPage />} />
+            
+            {/* Catch-all for potential store routes */}
+            <Route path="/:storeSlug" element={<StorePage />} />
+            <Route path="/:storeSlug/*" element={<StorePage />} />
           </Routes>
         </main>
         <Footer />
