@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 
 // Context Providers
 import { AuthProvider } from './contexts/AuthContext';
+import { SuperAdminProvider, SuperAdminGuard } from './contexts/SuperAdminContext';
 
 // Layout Components
 import Navbar from './components/layout/Navbar';
@@ -33,6 +34,14 @@ import StoreHelpPage from './pages/store/StoreHelpPage';
 import StoreContactPage from './pages/store/StoreContactPage';
 import StoreAboutPage from './pages/store/StoreAboutPage';
 
+// Super Admin Pages
+import SuperAdminLoginPage from './pages/super-admin/SuperAdminLoginPage';
+import SuperAdminDashboard from './pages/super-admin/SuperAdminDashboard';
+
+// Platform Pages
+import PlatformBlogPage from './pages/platform/PlatformBlogPage';
+import PlatformHelpPage from './pages/platform/PlatformHelpPage';
+
 // Global Styles
 import './index.css';
 
@@ -43,8 +52,8 @@ function App() {
     
     // Platform routes that should NOT be treated as store routes
     const platformRoutes = [
-      'features', 'pricing', 'templates', 'case-studies', 'about', 
-      'contact', 'login', 'register', 'dashboard', 'admin'
+      'features', 'pricing', 'templates', 'case-studies', 'about',
+      'contact', 'login', 'register', 'dashboard', 'admin', 'super-admin'
     ];
     
     // Check if first segment is a platform route
@@ -116,59 +125,86 @@ function App() {
 
   // Main platform routes
   return (
-    <AuthProvider>
-      <Router>
-        <div className="App">
-          <Navbar />
-          <main className="min-h-screen">
+    <SuperAdminProvider>
+      <AuthProvider>
+        <Router>
+          <div className="App">
             <Routes>
-              {/* Marketing Pages */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/features" element={<FeaturesPage />} />
-              <Route path="/pricing" element={<PricingPage />} />
-              <Route path="/templates" element={<TemplatesPage />} />
-              <Route path="/case-studies" element={<CaseStudiesPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/contact" element={<ContactPage />} />
+              {/* Super Admin Routes - No navbar/footer */}
+              <Route path="/super-admin/login" element={<SuperAdminLoginPage />} />
+              <Route
+                path="/super-admin/dashboard"
+                element={
+                  <SuperAdminGuard>
+                    <SuperAdminDashboard />
+                  </SuperAdminGuard>
+                }
+              />
 
-              {/* Authentication */}
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/onboarding" element={<OnboardingPage />} />
+              {/* Regular Platform Routes - With navbar/footer */}
+              <Route path="/*" element={
+                <>
+                  <Navbar />
+                  <main className="min-h-screen">
+                    <Routes>
+                      {/* Marketing Pages */}
+                      <Route path="/" element={<HomePage />} />
+                      <Route path="/features" element={<FeaturesPage />} />
+                      <Route path="/pricing" element={<PricingPage />} />
+                      <Route path="/templates" element={<TemplatesPage />} />
+                      <Route path="/case-studies" element={<CaseStudiesPage />} />
+                      <Route path="/about" element={<AboutPage />} />
+                      <Route path="/contact" element={<ContactPage />} />
 
-              {/* Dashboard */}
-              <Route path="/dashboard/*" element={<DashboardPage />} />
+                      {/* Authentication */}
+                      <Route path="/login" element={<LoginPage />} />
+                      <Route path="/register" element={<RegisterPage />} />
+                      <Route path="/onboarding" element={<OnboardingPage />} />
 
-              {/* Catch-all for potential store routes */}
-              <Route path="/:storeSlug" element={<StorePage />} />
-              <Route path="/:storeSlug/*" element={<StorePage />} />
+                      {/* Platform Content */}
+                      <Route path="/blog" element={<PlatformBlogPage />} />
+                      <Route path="/blog/:slug" element={<PlatformBlogPage />} />
+                      <Route path="/help" element={<PlatformHelpPage />} />
+                      <Route path="/help/:category" element={<PlatformHelpPage />} />
+                      <Route path="/help/:category/:article" element={<PlatformHelpPage />} />
+
+                      {/* Dashboard */}
+                      <Route path="/dashboard/*" element={<DashboardPage />} />
+
+                      {/* Catch-all for potential store routes */}
+                      <Route path="/:storeSlug" element={<StorePage />} />
+                      <Route path="/:storeSlug/*" element={<StorePage />} />
+                    </Routes>
+                  </main>
+                  <Footer />
+                </>
+              } />
             </Routes>
-          </main>
-          <Footer />
 
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#363636',
-                color: '#fff',
-              },
-              success: {
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
                 style: {
-                  background: '#10B981',
+                  background: '#363636',
+                  color: '#fff',
                 },
-              },
-              error: {
-                style: {
-                  background: '#EF4444',
+                success: {
+                  style: {
+                    background: '#10B981',
+                  },
                 },
-              },
-            }}
-          />
-        </div>
-      </Router>
-    </AuthProvider>
+                error: {
+                  style: {
+                    background: '#EF4444',
+                  },
+                },
+              }}
+            />
+          </div>
+        </Router>
+      </AuthProvider>
+    </SuperAdminProvider>
   );
 }
 

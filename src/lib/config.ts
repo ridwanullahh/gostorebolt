@@ -33,6 +33,21 @@ export const config = {
     domain: import.meta.env.VITE_APP_DOMAIN || 'gostore.com',
     supportEmail: 'support@gostore.com',
   },
+
+  // Super Admin Configuration (Environment-based)
+  superAdmins: (() => {
+    const admins = [];
+    let i = 1;
+    while (import.meta.env[`VITE_SUPER_ADMIN_${i}_EMAIL`]) {
+      admins.push({
+        email: import.meta.env[`VITE_SUPER_ADMIN_${i}_EMAIL`],
+        password: import.meta.env[`VITE_SUPER_ADMIN_${i}_PASSWORD`],
+        name: import.meta.env[`VITE_SUPER_ADMIN_${i}_NAME`] || `Super Admin ${i}`,
+      });
+      i++;
+    }
+    return admins;
+  })(),
 };
 
 // Validation function to check if required environment variables are set
