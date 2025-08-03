@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, ShoppingCart } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Card from '../../components/ui/Card';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { login, user } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -29,12 +32,17 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Simulate login
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await login(formData.email, formData.password);
       toast.success('Login successful!');
-      // Redirect to dashboard
-    } catch (error) {
-      toast.error('Invalid credentials. Please try again.');
+
+      // Redirect based on user state
+      if (user && !user.onboardingCompleted) {
+        navigate('/onboarding');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Invalid credentials. Please try again.');
     } finally {
       setIsLoading(false);
     }

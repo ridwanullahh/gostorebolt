@@ -2,6 +2,9 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
+// Context Providers
+import { AuthProvider } from './contexts/AuthContext';
+
 // Layout Components
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
@@ -16,6 +19,7 @@ import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
+import OnboardingPage from './pages/onboarding/OnboardingPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 
 // Store Pages
@@ -23,6 +27,11 @@ import StorePage from './pages/store/StorePage';
 import StoreProductPage from './pages/store/StoreProductPage';
 import StoreCheckoutPage from './pages/store/StoreCheckoutPage';
 import StoreAccountPage from './pages/store/StoreAccountPage';
+import CustomerAuthPage from './pages/store/CustomerAuthPage';
+import StoreBlogPage from './pages/store/StoreBlogPage';
+import StoreHelpPage from './pages/store/StoreHelpPage';
+import StoreContactPage from './pages/store/StoreContactPage';
+import StoreAboutPage from './pages/store/StoreAboutPage';
 
 // Global Styles
 import './index.css';
@@ -63,13 +72,17 @@ function App() {
             <Route path={`/${storeSlug}/category/:categorySlug`} element={<StorePage />} />
             <Route path={`/${storeSlug}/cart`} element={<StoreCheckoutPage />} />
             <Route path={`/${storeSlug}/checkout`} element={<StoreCheckoutPage />} />
+            <Route path={`/${storeSlug}/auth`} element={<CustomerAuthPage />} />
             <Route path={`/${storeSlug}/account/*`} element={<StoreAccountPage />} />
             <Route path={`/${storeSlug}/wishlist`} element={<StorePage />} />
             <Route path={`/${storeSlug}/compare`} element={<StorePage />} />
             <Route path={`/${storeSlug}/search`} element={<StorePage />} />
-            <Route path={`/${storeSlug}/about`} element={<StorePage />} />
-            <Route path={`/${storeSlug}/contact`} element={<StorePage />} />
-            <Route path={`/${storeSlug}/help`} element={<StorePage />} />
+            <Route path={`/${storeSlug}/blog`} element={<StoreBlogPage />} />
+            <Route path={`/${storeSlug}/blog/:postSlug`} element={<StoreBlogPage />} />
+            <Route path={`/${storeSlug}/about`} element={<StoreAboutPage />} />
+            <Route path={`/${storeSlug}/contact`} element={<StoreContactPage />} />
+            <Route path={`/${storeSlug}/help`} element={<StoreHelpPage />} />
+            <Route path={`/${storeSlug}/help/:articleSlug`} element={<StoreHelpPage />} />
             <Route path={`/${storeSlug}/shipping`} element={<StorePage />} />
             <Route path={`/${storeSlug}/returns`} element={<StorePage />} />
             <Route path={`/${storeSlug}/privacy`} element={<StorePage />} />
@@ -103,56 +116,59 @@ function App() {
 
   // Main platform routes
   return (
-    <Router>
-      <div className="App">
-        <Navbar />
-        <main className="min-h-screen">
-          <Routes>
-            {/* Marketing Pages */}
-            <Route path="/" element={<HomePage />} />
-            <Route path="/features" element={<FeaturesPage />} />
-            <Route path="/pricing" element={<PricingPage />} />
-            <Route path="/templates" element={<TemplatesPage />} />
-            <Route path="/case-studies" element={<CaseStudiesPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            
-            {/* Authentication */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            
-            {/* Dashboard */}
-            <Route path="/dashboard/*" element={<DashboardPage />} />
-            
-            {/* Catch-all for potential store routes */}
-            <Route path="/:storeSlug" element={<StorePage />} />
-            <Route path="/:storeSlug/*" element={<StorePage />} />
-          </Routes>
-        </main>
-        <Footer />
-        
-        <Toaster 
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
+    <AuthProvider>
+      <Router>
+        <div className="App">
+          <Navbar />
+          <main className="min-h-screen">
+            <Routes>
+              {/* Marketing Pages */}
+              <Route path="/" element={<HomePage />} />
+              <Route path="/features" element={<FeaturesPage />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/templates" element={<TemplatesPage />} />
+              <Route path="/case-studies" element={<CaseStudiesPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+
+              {/* Authentication */}
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/onboarding" element={<OnboardingPage />} />
+
+              {/* Dashboard */}
+              <Route path="/dashboard/*" element={<DashboardPage />} />
+
+              {/* Catch-all for potential store routes */}
+              <Route path="/:storeSlug" element={<StorePage />} />
+              <Route path="/:storeSlug/*" element={<StorePage />} />
+            </Routes>
+          </main>
+          <Footer />
+
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
               style: {
-                background: '#10B981',
+                background: '#363636',
+                color: '#fff',
               },
-            },
-            error: {
-              style: {
-                background: '#EF4444',
+              success: {
+                style: {
+                  background: '#10B981',
+                },
               },
-            },
-          }}
-        />
-      </div>
-    </Router>
+              error: {
+                style: {
+                  background: '#EF4444',
+                },
+              },
+            }}
+          />
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 

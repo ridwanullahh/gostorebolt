@@ -100,6 +100,24 @@ interface EmailPayload {
   headers: Record<string, string>;
 }
 
+interface QueueItem {
+  id: string;
+  operation: 'create' | 'update' | 'delete';
+  table: string;
+  data: any;
+  resolve: (value: any) => void;
+  reject: (error: any) => void;
+  retryCount: number;
+  timestamp: number;
+}
+
+interface Subscription {
+  id: string;
+  table: string;
+  callback: (data: any, operation: string) => void;
+  filter?: (data: any) => boolean;
+}
+
 class UniversalSDK {
   private owner: string;
   private repo: string;
@@ -115,6 +133,18 @@ class UniversalSDK {
   private sessionStore: Record<string, Session>;
   private otpMemory: Record<string, OTPRecord>;
   private auditLog: Record<string, AuditLogEntry[]>;
+
+  // Queue system for handling 409 conflicts
+  private writeQueue: QueueItem[] = [];
+  private isProcessingQueue = false;
+  private readonly MAX_RETRIES = 3;
+  private readonly RETRY_DELAY = 1000; // 1 second
+
+  // Real-time subscription system
+  private subscriptions: Map<string, Subscription> = new Map();
+  private pollingIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private readonly POLLING_INTERVAL = 2000; // 2 seconds
+  private lastDataSnapshot: Map<string, any> = new Map();
 
   constructor(config: UniversalSDKConfig) {
     // 0.1 Initialization
@@ -923,12 +953,18 @@ class UniversalSDK {
         password: 'string',
         verified: 'boolean',
         roles: 'array',
-        permissions: 'array'
+        permissions: 'array',
+        firstName: 'string',
+        lastName: 'string',
+        company: 'string',
+        onboardingCompleted: 'boolean',
+        storeId: 'string'
       },
       defaults: {
         verified: false,
         roles: [],
-        permissions: []
+        permissions: [],
+        onboardingCompleted: false
       }
     });
 
@@ -938,12 +974,38 @@ class UniversalSDK {
         name: 'string',
         ownerId: 'string',
         slug: 'string',
+        subdomain: 'string',
         theme: 'string',
-        settings: 'object'
+        settings: 'object',
+        status: 'string',
+        domain: 'string'
       },
       defaults: {
         theme: 'modern',
-        settings: {},
+        settings: {
+          branding: {
+            colors: {
+              primary: '#10b981',
+              secondary: '#059669',
+              accent: '#34d399'
+            },
+            fonts: {
+              heading: 'Inter',
+              body: 'Inter'
+            }
+          },
+          currency: {
+            code: 'USD',
+            symbol: '$',
+            position: 'before'
+          },
+          features: {
+            wishlist: true,
+            compare: true,
+            reviews: true,
+            chat: true
+          }
+        },
         status: 'active'
       }
     });
@@ -955,12 +1017,130 @@ class UniversalSDK {
         storeId: 'string',
         price: 'number',
         description: 'string',
-        images: 'array'
+        images: 'array',
+        category: 'string',
+        sku: 'string',
+        inventory: 'number',
+        status: 'string'
       },
       defaults: {
         price: 0,
         images: [],
+        status: 'active',
+        inventory: 0
+      }
+    });
+
+    this.setSchema('categories', {
+      required: ['name', 'storeId'],
+      types: {
+        name: 'string',
+        storeId: 'string',
+        slug: 'string',
+        description: 'string',
+        image: 'string',
+        parentId: 'string',
+        status: 'string'
+      },
+      defaults: {
         status: 'active'
+      }
+    });
+
+    this.setSchema('orders', {
+      required: ['storeId', 'customerId'],
+      types: {
+        storeId: 'string',
+        customerId: 'string',
+        items: 'array',
+        total: 'number',
+        status: 'string',
+        shippingAddress: 'object',
+        billingAddress: 'object',
+        paymentMethod: 'string'
+      },
+      defaults: {
+        status: 'pending',
+        total: 0,
+        items: []
+      }
+    });
+
+    this.setSchema('customers', {
+      required: ['storeId', 'email'],
+      types: {
+        storeId: 'string',
+        email: 'string',
+        password: 'string',
+        firstName: 'string',
+        lastName: 'string',
+        phone: 'string',
+        addresses: 'array',
+        orders: 'array',
+        wishlist: 'array',
+        status: 'string'
+      },
+      defaults: {
+        status: 'active',
+        addresses: [],
+        orders: [],
+        wishlist: []
+      }
+    });
+
+    this.setSchema('blog_posts', {
+      required: ['storeId', 'title'],
+      types: {
+        storeId: 'string',
+        title: 'string',
+        content: 'string',
+        excerpt: 'string',
+        slug: 'string',
+        authorId: 'string',
+        categoryId: 'string',
+        featuredImage: 'string',
+        status: 'string',
+        tags: 'array'
+      },
+      defaults: {
+        status: 'draft',
+        tags: []
+      }
+    });
+
+    this.setSchema('help_articles', {
+      required: ['storeId', 'title'],
+      types: {
+        storeId: 'string',
+        title: 'string',
+        content: 'string',
+        slug: 'string',
+        categoryId: 'string',
+        status: 'string',
+        views: 'number'
+      },
+      defaults: {
+        status: 'published',
+        views: 0
+      }
+    });
+
+    this.setSchema('support_tickets', {
+      required: ['storeId', 'customerId', 'subject'],
+      types: {
+        storeId: 'string',
+        customerId: 'string',
+        subject: 'string',
+        description: 'string',
+        status: 'string',
+        priority: 'string',
+        assignedTo: 'string',
+        messages: 'array'
+      },
+      defaults: {
+        status: 'open',
+        priority: 'medium',
+        messages: []
       }
     });
 
@@ -1013,6 +1193,221 @@ class UniversalSDK {
       await new Promise(res => setTimeout(res, 100));
     }
     return true;
+  }
+
+  // Queue-based writing system to handle 409 conflicts
+  private async addToQueue<T>(
+    operation: 'create' | 'update' | 'delete',
+    table: string,
+    data: any
+  ): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const queueItem: QueueItem = {
+        id: crypto.randomUUID(),
+        operation,
+        table,
+        data,
+        resolve,
+        reject,
+        retryCount: 0,
+        timestamp: Date.now()
+      };
+
+      this.writeQueue.push(queueItem);
+      this.processQueue();
+    });
+  }
+
+  private async processQueue(): Promise<void> {
+    if (this.isProcessingQueue || this.writeQueue.length === 0) {
+      return;
+    }
+
+    this.isProcessingQueue = true;
+
+    while (this.writeQueue.length > 0) {
+      const item = this.writeQueue.shift()!;
+
+      try {
+        let result;
+        switch (item.operation) {
+          case 'create':
+            result = await this.directInsert(item.table, item.data);
+            break;
+          case 'update':
+            result = await this.directUpdate(item.table, item.data.id, item.data);
+            break;
+          case 'delete':
+            result = await this.directDelete(item.table, item.data.id);
+            break;
+        }
+
+        item.resolve(result);
+
+        // Notify subscribers of the change
+        this.notifySubscribers(item.table, result, item.operation);
+
+      } catch (error: any) {
+        if (error.status === 409 && item.retryCount < this.MAX_RETRIES) {
+          // 409 conflict - retry after delay
+          item.retryCount++;
+          await new Promise(resolve => setTimeout(resolve, this.RETRY_DELAY * item.retryCount));
+          this.writeQueue.unshift(item); // Put back at front of queue
+        } else {
+          item.reject(error);
+        }
+      }
+    }
+
+    this.isProcessingQueue = false;
+  }
+
+  // Direct operations (without queue) for internal use
+  private async directInsert<T>(table: string, data: Partial<T>): Promise<T> {
+    const id = crypto.randomUUID();
+    const timestamp = new Date().toISOString();
+    const record = { ...data, id, createdAt: timestamp, updatedAt: timestamp } as T;
+
+    const filePath = `${this.basePath}/${table}/${id}.json`;
+    const content = JSON.stringify(record, null, 2);
+
+    await this.createFile(filePath, content);
+    return record;
+  }
+
+  private async directUpdate<T>(table: string, id: string, updates: Partial<T>): Promise<T> {
+    const existing = await this.getItem<T>(table, id);
+    if (!existing) throw new Error(`Item not found: ${id}`);
+
+    const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() } as T;
+    const filePath = `${this.basePath}/${table}/${id}.json`;
+    const content = JSON.stringify(updated, null, 2);
+
+    await this.updateFile(filePath, content);
+    return updated;
+  }
+
+  private async directDelete(table: string, id: string): Promise<void> {
+    const filePath = `${this.basePath}/${table}/${id}.json`;
+    await this.deleteFile(filePath);
+  }
+
+  // Real-time subscription system
+  subscribe<T>(
+    table: string,
+    callback: (data: T, operation: string) => void,
+    filter?: (data: T) => boolean
+  ): string {
+    const subscriptionId = crypto.randomUUID();
+
+    const subscription: Subscription = {
+      id: subscriptionId,
+      table,
+      callback,
+      filter
+    };
+
+    this.subscriptions.set(subscriptionId, subscription);
+
+    // Start polling for this table if not already started
+    if (!this.pollingIntervals.has(table)) {
+      this.startPolling(table);
+    }
+
+    return subscriptionId;
+  }
+
+  unsubscribe(subscriptionId: string): void {
+    const subscription = this.subscriptions.get(subscriptionId);
+    if (subscription) {
+      this.subscriptions.delete(subscriptionId);
+
+      // Stop polling if no more subscriptions for this table
+      const hasSubscriptions = Array.from(this.subscriptions.values())
+        .some(sub => sub.table === subscription.table);
+
+      if (!hasSubscriptions && this.pollingIntervals.has(subscription.table)) {
+        clearInterval(this.pollingIntervals.get(subscription.table)!);
+        this.pollingIntervals.delete(subscription.table);
+      }
+    }
+  }
+
+  private startPolling(table: string): void {
+    const interval = setInterval(async () => {
+      try {
+        const currentData = await this.get(table);
+        const lastSnapshot = this.lastDataSnapshot.get(table) || [];
+
+        // Compare with last snapshot to detect changes
+        const changes = this.detectChanges(lastSnapshot, currentData);
+
+        if (changes.length > 0) {
+          changes.forEach(change => {
+            this.notifySubscribers(table, change.data, change.operation);
+          });
+        }
+
+        this.lastDataSnapshot.set(table, currentData);
+      } catch (error) {
+        console.error(`Polling error for table ${table}:`, error);
+      }
+    }, this.POLLING_INTERVAL);
+
+    this.pollingIntervals.set(table, interval);
+  }
+
+  private detectChanges(oldData: any[], newData: any[]): Array<{data: any, operation: string}> {
+    const changes: Array<{data: any, operation: string}> = [];
+
+    // Create maps for easier comparison
+    const oldMap = new Map(oldData.map(item => [item.id, item]));
+    const newMap = new Map(newData.map(item => [item.id, item]));
+
+    // Detect new items
+    newData.forEach(item => {
+      if (!oldMap.has(item.id)) {
+        changes.push({ data: item, operation: 'create' });
+      } else {
+        // Check for updates
+        const oldItem = oldMap.get(item.id);
+        if (JSON.stringify(oldItem) !== JSON.stringify(item)) {
+          changes.push({ data: item, operation: 'update' });
+        }
+      }
+    });
+
+    // Detect deleted items
+    oldData.forEach(item => {
+      if (!newMap.has(item.id)) {
+        changes.push({ data: item, operation: 'delete' });
+      }
+    });
+
+    return changes;
+  }
+
+  private notifySubscribers(table: string, data: any, operation: string): void {
+    this.subscriptions.forEach(subscription => {
+      if (subscription.table === table) {
+        if (!subscription.filter || subscription.filter(data)) {
+          subscription.callback(data, operation);
+        }
+      }
+    });
+  }
+
+  // Override existing methods to use queue
+  async insertQueued<T>(table: string, data: Partial<T>): Promise<T> {
+    return this.addToQueue<T>('create', table, data);
+  }
+
+  async updateQueued<T>(table: string, id: string, updates: Partial<T>): Promise<T> {
+    return this.addToQueue<T>('update', table, { id, ...updates });
+  }
+
+  async deleteQueued(table: string, id: string): Promise<void> {
+    return this.addToQueue<void>('delete', table, { id });
   }
 }
 

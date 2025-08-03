@@ -17,6 +17,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Card from '../../components/ui/Card';
 import StoreSDK, { Store, Product, Cart } from '../../lib/store-sdk';
+import { getTheme, applyTheme } from '../../lib/store-themes';
 import toast from 'react-hot-toast';
 
 const StorePage: React.FC = () => {
@@ -70,6 +71,12 @@ const StorePage: React.FC = () => {
       }
       
       setStore(storeData);
+
+      // Apply store theme
+      if (storeData.theme) {
+        const theme = getTheme(storeData.theme);
+        applyTheme(theme);
+      }
 
       // Load products
       const productsData = await storeSDK.getStoreProducts(storeData.id, {

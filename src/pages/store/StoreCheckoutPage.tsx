@@ -171,7 +171,7 @@ const StoreCheckoutPage: React.FC = () => {
         items: cart.items,
         subtotal: cart.subtotal,
         tax: cart.tax,
-        shipping: cart.shipping,
+        shippingCost: cart.shipping,
         discount: cart.discount,
         total: cart.total,
         currency: cart.currency,
@@ -181,8 +181,8 @@ const StoreCheckoutPage: React.FC = () => {
           lastName: shippingForm.lastName,
           phone: shippingForm.phone,
         },
-        shipping: shippingForm,
-        billing: billingForm.sameAsShipping ? shippingForm : billingForm,
+        shippingAddress: shippingForm,
+        billingAddress: billingForm.sameAsShipping ? shippingForm : billingForm,
       });
 
       toast.success('Order placed successfully!');

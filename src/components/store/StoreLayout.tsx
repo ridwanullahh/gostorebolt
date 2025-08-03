@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
-import { 
-  Search, ShoppingCart, Heart, User, Menu, X, 
+import {
+  Search, ShoppingCart, Heart, User, Menu, X,
   Phone, Mail, MapPin, Star, Filter, Grid, List,
   ChevronDown, Home, Package, Users as UsersIcon
 } from 'lucide-react';
@@ -10,6 +10,7 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Card from '../ui/Card';
 import StoreSDK, { Store } from '../../lib/store-sdk';
+import { CustomerAuthProvider } from '../../contexts/CustomerAuthContext';
 
 interface StoreLayoutProps {
   children: React.ReactNode;
@@ -142,7 +143,8 @@ const StoreLayout: React.FC<StoreLayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <CustomerAuthProvider storeSlug={getStoreSlugFromUrl() || 'demo'}>
+      <div className="min-h-screen bg-gray-50">
       {/* Top Bar */}
       <div className="bg-gray-900 text-white py-2 px-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between text-sm">
@@ -493,7 +495,8 @@ const StoreLayout: React.FC<StoreLayoutProps> = ({ children }) => {
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+    </CustomerAuthProvider>
   );
 };
 

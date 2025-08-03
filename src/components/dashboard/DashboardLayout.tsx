@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, ShoppingCart, Package, Users, BarChart3, 
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import {
+  LayoutDashboard, ShoppingCart, Package, Users, BarChart3,
   Settings, Menu, X, Bell, Search, User, LogOut, Store,
-  CreditCard, MessageCircle, Palette, Globe, Zap
+  FileText, HelpCircle, MessageSquare, Eye
 } from 'lucide-react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import { useAuth } from '../../contexts/AuthContext';
+import StoreSDK from '../../lib/store-sdk';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -14,21 +16,43 @@ interface DashboardLayoutProps {
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [store, setStore] = useState<any>(null);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [storeSDK] = useState(() => new StoreSDK());
+
+  useEffect(() => {
+    loadStore();
+  }, [user]);
+
+  const loadStore = async () => {
+    if (!user?.storeId) return;
+
+    try {
+      const storeData = await storeSDK.getStore(user.storeId);
+      setStore(storeData);
+    } catch (error) {
+      console.error('Failed to load store:', error);
+    }
+  };
 
   const navigation = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Orders', href: '/dashboard/orders', icon: ShoppingCart },
     { name: 'Products', href: '/dashboard/products', icon: Package },
+    { name: 'Orders', href: '/dashboard/orders', icon: ShoppingCart },
     { name: 'Customers', href: '/dashboard/customers', icon: Users },
     { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
-    { name: 'Marketing', href: '/dashboard/marketing', icon: Zap },
-    { name: 'Store Design', href: '/dashboard/design', icon: Palette },
-    { name: 'Payments', href: '/dashboard/payments', icon: CreditCard },
-    { name: 'Messages', href: '/dashboard/messages', icon: MessageCircle },
-    { name: 'Domains', href: '/dashboard/domains', icon: Globe },
+    { name: 'Blog', href: '/dashboard/blog', icon: FileText },
+    { name: 'Help Center', href: '/dashboard/help', icon: HelpCircle },
+    { name: 'Support', href: '/dashboard/support', icon: MessageSquare },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const isActive = (href: string) => {
     if (href === '/dashboard') {
@@ -73,9 +97,22 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
             <Store className="h-5 w-5 text-gray-600" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">My Store</p>
-              <p className="text-xs text-gray-500">mystore.gostore.com</p>
+              <p className="text-sm font-medium text-gray-900">
+                {store?.name || 'My Store'}
+              </p>
+              <p className="text-xs text-gray-500">
+                {store?.subdomain || 'mystore'}.gostore.top
+              </p>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(`/${store?.subdomain || 'mystore'}`, '_blank')}
+              className="flex items-center"
+            >
+              <Eye className="h-3 w-3 mr-1" />
+              View
+            </Button>
           </div>
         </div>
 
@@ -147,6 +184,31 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <Button variant="primary" size="sm">
                 Add Product
               </Button>
+
+              {/* User Profile */}
+              <div className="relative">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                    <User className="h-4 w-4 text-primary-600" />
+                  </div>
+                  <div className="hidden md:block">
+                    <p className="text-sm font-medium text-gray-900">
+                      {user?.firstName && user?.lastName
+                        ? `${user.firstName} ${user.lastName}`
+                        : user?.email
+                      }
+                    </p>
+                    <p className="text-xs text-gray-500">Store Owner</p>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="p-2 text-gray-500 hover:text-gray-700"
+                    title="Logout"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

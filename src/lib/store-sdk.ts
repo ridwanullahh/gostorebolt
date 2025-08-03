@@ -374,6 +374,7 @@ interface DiscountCode {
 class StoreSDK {
   private sdk: UniversalSDK;
   private ai: ChutesAI;
+  private subscriptions: Map<string, string> = new Map();
 
   constructor() {
     this.sdk = new UniversalSDK({
@@ -674,6 +675,13 @@ class StoreSDK {
     });
   }
 
+  async updateUser(userId: string, updates: Partial<User>): Promise<User> {
+    return this.sdk.update<User>('users', userId, {
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
   // Product Management
   async createProduct(productData: Partial<Product>): Promise<Product> {
     const slug = this.generateSlug(productData.name!);
@@ -836,6 +844,11 @@ class StoreSDK {
 
   // Customer Management
   async createCustomer(customerData: Partial<Customer>): Promise<Customer> {
+    // Hash password if provided
+    if (customerData.password) {
+      customerData.password = this.sdk.hashPassword(customerData.password);
+    }
+
     return this.sdk.insert<Customer>('customers', {
       ...customerData,
       createdAt: new Date().toISOString(),
@@ -867,6 +880,69 @@ class StoreSDK {
       ...updates,
       updatedAt: new Date().toISOString(),
     });
+  }
+
+  async deleteCustomer(customerId: string): Promise<void> {
+    return this.sdk.delete('customers', customerId);
+  }
+
+  // Customer Authentication
+  async customerLogin(storeId: string, email: string, password: string): Promise<{ customer: Customer; token: string }> {
+    const customer = await this.getCustomerByEmail(storeId, email);
+
+    if (!customer || !customer.password) {
+      throw new Error('Invalid credentials');
+    }
+
+    if (!this.sdk.verifyPassword(password, customer.password)) {
+      throw new Error('Invalid credentials');
+    }
+
+    // Create customer session token
+    const token = this.generateCustomerToken(customer);
+
+    return { customer, token };
+  }
+
+  async getCustomerByToken(storeId: string, token: string): Promise<Customer | null> {
+    try {
+      // Decode and validate token
+      const decoded = this.validateCustomerToken(token);
+      if (decoded.storeId !== storeId) {
+        return null;
+      }
+
+      return this.getCustomer(decoded.customerId);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  private generateCustomerToken(customer: Customer): string {
+    // Simple token generation - in production, use proper JWT
+    const payload = {
+      customerId: customer.id,
+      storeId: customer.storeId,
+      email: customer.email,
+      timestamp: Date.now()
+    };
+
+    return btoa(JSON.stringify(payload));
+  }
+
+  private validateCustomerToken(token: string): any {
+    try {
+      const decoded = JSON.parse(atob(token));
+
+      // Check if token is expired (24 hours)
+      if (Date.now() - decoded.timestamp > 24 * 60 * 60 * 1000) {
+        throw new Error('Token expired');
+      }
+
+      return decoded;
+    } catch (error) {
+      throw new Error('Invalid token');
+    }
   }
 
   // Cart Management
@@ -1200,6 +1276,49 @@ class StoreSDK {
 
   async chatWithCustomer(message: string, context?: string): Promise<string> {
     return this.ai.chatWithCustomer(message, context);
+  }
+  // Real-time subscription methods
+  subscribeToTable<T>(
+    table: string,
+    callback: (data: T, operation: string) => void,
+    filter?: (data: T) => boolean
+  ): string {
+    const subscriptionId = this.sdk.subscribe(table, callback, filter);
+    this.subscriptions.set(table, subscriptionId);
+    return subscriptionId;
+  }
+
+  unsubscribeFromTable(table: string): void {
+    const subscriptionId = this.subscriptions.get(table);
+    if (subscriptionId) {
+      this.sdk.unsubscribe(subscriptionId);
+      this.subscriptions.delete(table);
+    }
+  }
+
+  // Convenience methods for specific tables
+  subscribeToProducts(storeId: string, callback: (product: Product, operation: string) => void): string {
+    return this.subscribeToTable('products', callback, (product: Product) => product.storeId === storeId);
+  }
+
+  subscribeToOrders(storeId: string, callback: (order: Order, operation: string) => void): string {
+    return this.subscribeToTable('orders', callback, (order: Order) => order.storeId === storeId);
+  }
+
+  subscribeToCustomers(storeId: string, callback: (customer: Customer, operation: string) => void): string {
+    return this.subscribeToTable('customers', callback, (customer: Customer) => customer.storeId === storeId);
+  }
+
+  subscribeToInventory(storeId: string, callback: (item: any, operation: string) => void): string {
+    return this.subscribeToTable('inventory_items', callback, (item: any) => item.storeId === storeId);
+  }
+
+  // Cleanup all subscriptions
+  cleanup(): void {
+    this.subscriptions.forEach((subscriptionId) => {
+      this.sdk.unsubscribe(subscriptionId);
+    });
+    this.subscriptions.clear();
   }
 }
 

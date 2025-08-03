@@ -194,6 +194,331 @@ export const storeThemes: StoreTheme[] = [
       borders: false,
     },
   },
+  // NEW THEMES - 9 Additional Professional Themes
+  {
+    id: 'fashion',
+    name: 'Fashion Forward',
+    description: 'Elegant design perfect for fashion and lifestyle brands',
+    category: 'fashion',
+    colors: {
+      primary: '#e91e63',
+      secondary: '#ad1457',
+      accent: '#f8bbd9',
+      background: '#fafafa',
+      surface: '#ffffff',
+      text: '#212121',
+      textSecondary: '#757575'
+    },
+    fonts: {
+      heading: 'Playfair Display',
+      body: 'Source Sans Pro'
+    },
+    layout: {
+      headerStyle: 'minimal',
+      navigationStyle: 'horizontal',
+      productGridStyle: 'masonry',
+      footerStyle: 'minimal'
+    },
+    components: {
+      buttonStyle: 'pill',
+      cardStyle: 'elevated',
+      imageStyle: 'rounded'
+    },
+    effects: {
+      animations: true,
+      gradients: true,
+      shadows: true,
+      borders: false,
+    },
+  },
+  {
+    id: 'food',
+    name: 'Gourmet',
+    description: 'Warm and inviting design for food and restaurant businesses',
+    category: 'food',
+    colors: {
+      primary: '#ff6f00',
+      secondary: '#e65100',
+      accent: '#ffcc02',
+      background: '#fff8e1',
+      surface: '#ffffff',
+      text: '#3e2723',
+      textSecondary: '#6d4c41'
+    },
+    fonts: {
+      heading: 'Merriweather',
+      body: 'Open Sans'
+    },
+    layout: {
+      headerStyle: 'classic',
+      navigationStyle: 'horizontal',
+      productGridStyle: 'grid',
+      footerStyle: 'detailed'
+    },
+    components: {
+      buttonStyle: 'rounded',
+      cardStyle: 'shadow',
+      imageStyle: 'rounded'
+    },
+    effects: {
+      animations: true,
+      gradients: false,
+      shadows: true,
+      borders: true,
+    },
+  },
+  {
+    id: 'fitness',
+    name: 'Athletic',
+    description: 'Dynamic and energetic design for fitness and sports brands',
+    category: 'fitness',
+    colors: {
+      primary: '#4caf50',
+      secondary: '#388e3c',
+      accent: '#8bc34a',
+      background: '#f1f8e9',
+      surface: '#ffffff',
+      text: '#1b5e20',
+      textSecondary: '#4caf50'
+    },
+    fonts: {
+      heading: 'Roboto Condensed',
+      body: 'Roboto'
+    },
+    layout: {
+      headerStyle: 'bold',
+      navigationStyle: 'horizontal',
+      productGridStyle: 'grid',
+      footerStyle: 'simple'
+    },
+    components: {
+      buttonStyle: 'square',
+      cardStyle: 'border',
+      imageStyle: 'square'
+    },
+    effects: {
+      animations: true,
+      gradients: true,
+      shadows: false,
+      borders: true,
+    },
+  },
+  {
+    id: 'beauty',
+    name: 'Beauty Salon',
+    description: 'Sophisticated and glamorous design for beauty and cosmetics',
+    category: 'beauty',
+    colors: {
+      primary: '#9c27b0',
+      secondary: '#7b1fa2',
+      accent: '#e1bee7',
+      background: '#fce4ec',
+      surface: '#ffffff',
+      text: '#4a148c',
+      textSecondary: '#7b1fa2'
+    },
+    fonts: {
+      heading: 'Dancing Script',
+      body: 'Lato'
+    },
+    layout: {
+      headerStyle: 'minimal',
+      navigationStyle: 'horizontal',
+      productGridStyle: 'masonry',
+      footerStyle: 'minimal'
+    },
+    components: {
+      buttonStyle: 'pill',
+      cardStyle: 'elevated',
+      imageStyle: 'circle'
+    },
+    effects: {
+      animations: true,
+      gradients: true,
+      shadows: true,
+      borders: false,
+    },
+  },
+  {
+    id: 'automotive',
+    name: 'Auto Parts',
+    description: 'Industrial and robust design for automotive and machinery',
+    category: 'automotive',
+    colors: {
+      primary: '#607d8b',
+      secondary: '#455a64',
+      accent: '#90a4ae',
+      background: '#eceff1',
+      surface: '#ffffff',
+      text: '#263238',
+      textSecondary: '#546e7a'
+    },
+    fonts: {
+      heading: 'Oswald',
+      body: 'Roboto'
+    },
+    layout: {
+      headerStyle: 'bold',
+      navigationStyle: 'horizontal',
+      productGridStyle: 'grid',
+      footerStyle: 'detailed'
+    },
+    components: {
+      buttonStyle: 'square',
+      cardStyle: 'border',
+      imageStyle: 'square'
+    },
+    effects: {
+      animations: false,
+      gradients: false,
+      shadows: false,
+      borders: true,
+    },
+  },
+  {
+    id: 'jewelry',
+    name: 'Luxury Jewelry',
+    description: 'Premium and elegant design for jewelry and luxury goods',
+    category: 'jewelry',
+    colors: {
+      primary: '#795548',
+      secondary: '#5d4037',
+      accent: '#d7ccc8',
+      background: '#efebe9',
+      surface: '#ffffff',
+      text: '#3e2723',
+      textSecondary: '#6d4c41'
+    },
+    fonts: {
+      heading: 'Cormorant Garamond',
+      body: 'Crimson Text'
+    },
+    layout: {
+      headerStyle: 'minimal',
+      navigationStyle: 'horizontal',
+      productGridStyle: 'grid',
+      footerStyle: 'minimal'
+    },
+    components: {
+      buttonStyle: 'outlined',
+      cardStyle: 'elevated',
+      imageStyle: 'rounded'
+    },
+    effects: {
+      animations: true,
+      gradients: true,
+      shadows: true,
+      borders: false,
+    },
+  },
+  {
+    id: 'books',
+    name: 'Bookstore',
+    description: 'Classic and scholarly design for books and educational content',
+    category: 'books',
+    colors: {
+      primary: '#3f51b5',
+      secondary: '#303f9f',
+      accent: '#c5cae9',
+      background: '#e8eaf6',
+      surface: '#ffffff',
+      text: '#1a237e',
+      textSecondary: '#3f51b5'
+    },
+    fonts: {
+      heading: 'Libre Baskerville',
+      body: 'Source Serif Pro'
+    },
+    layout: {
+      headerStyle: 'classic',
+      navigationStyle: 'sidebar',
+      productGridStyle: 'list',
+      footerStyle: 'detailed'
+    },
+    components: {
+      buttonStyle: 'rounded',
+      cardStyle: 'shadow',
+      imageStyle: 'square'
+    },
+    effects: {
+      animations: false,
+      gradients: false,
+      shadows: true,
+      borders: true,
+    },
+  },
+  {
+    id: 'electronics',
+    name: 'Electronics Store',
+    description: 'Modern and tech-focused design for electronics and gadgets',
+    category: 'electronics',
+    colors: {
+      primary: '#2196f3',
+      secondary: '#1976d2',
+      accent: '#bbdefb',
+      background: '#e3f2fd',
+      surface: '#ffffff',
+      text: '#0d47a1',
+      textSecondary: '#1976d2'
+    },
+    fonts: {
+      heading: 'Roboto',
+      body: 'Roboto'
+    },
+    layout: {
+      headerStyle: 'modern',
+      navigationStyle: 'horizontal',
+      productGridStyle: 'grid',
+      footerStyle: 'simple'
+    },
+    components: {
+      buttonStyle: 'rounded',
+      cardStyle: 'border',
+      imageStyle: 'square'
+    },
+    effects: {
+      animations: true,
+      gradients: true,
+      shadows: false,
+      borders: true,
+    },
+  },
+  {
+    id: 'handmade',
+    name: 'Artisan Crafts',
+    description: 'Rustic and authentic design for handmade and artisan products',
+    category: 'handmade',
+    colors: {
+      primary: '#8d6e63',
+      secondary: '#6d4c41',
+      accent: '#d7ccc8',
+      background: '#f3e5f5',
+      surface: '#ffffff',
+      text: '#3e2723',
+      textSecondary: '#5d4037'
+    },
+    fonts: {
+      heading: 'Amatic SC',
+      body: 'Nunito'
+    },
+    layout: {
+      headerStyle: 'classic',
+      navigationStyle: 'horizontal',
+      productGridStyle: 'masonry',
+      footerStyle: 'detailed'
+    },
+    components: {
+      buttonStyle: 'rounded',
+      cardStyle: 'shadow',
+      imageStyle: 'rounded'
+    },
+    effects: {
+      animations: true,
+      gradients: false,
+      shadows: true,
+      borders: true,
+    },
+  },
 ];
 
 export const getThemeById = (themeId: string): StoreTheme | null => {
@@ -294,4 +619,63 @@ export const generateDemoData = (theme: StoreTheme) => {
   };
 
   return categoryProducts[theme.category] || categoryProducts.general;
+};
+
+// Theme utilities
+export const getTheme = (themeId: string): StoreTheme => {
+  return storeThemes.find(theme => theme.id === themeId) || storeThemes[0];
+};
+
+export const applyTheme = (theme: StoreTheme, brandColors?: any) => {
+  const root = document.documentElement;
+
+  // Use brand colors if provided, otherwise use theme colors
+  const colors = brandColors || theme.colors;
+
+  // Apply CSS custom properties
+  root.style.setProperty('--color-primary', colors.primary);
+  root.style.setProperty('--color-secondary', colors.secondary);
+  root.style.setProperty('--color-accent', colors.accent);
+  root.style.setProperty('--color-background', colors.background);
+  root.style.setProperty('--color-surface', colors.surface);
+  root.style.setProperty('--color-text', colors.text);
+  root.style.setProperty('--color-text-secondary', colors.textSecondary);
+
+  // Apply neutral colors if available
+  if (brandColors?.neutral) {
+    Object.entries(brandColors.neutral).forEach(([shade, color]) => {
+      root.style.setProperty(`--color-neutral-${shade}`, color as string);
+    });
+  }
+
+  // Apply semantic colors if available
+  if (brandColors?.success) root.style.setProperty('--color-success', brandColors.success);
+  if (brandColors?.warning) root.style.setProperty('--color-warning', brandColors.warning);
+  if (brandColors?.error) root.style.setProperty('--color-error', brandColors.error);
+  if (brandColors?.info) root.style.setProperty('--color-info', brandColors.info);
+
+  // Apply fonts
+  root.style.setProperty('--font-heading', theme.fonts.heading);
+  root.style.setProperty('--font-body', theme.fonts.body);
+
+  // Apply theme effects
+  root.style.setProperty('--theme-animations', theme.effects.animations ? 'enabled' : 'disabled');
+  root.style.setProperty('--theme-gradients', theme.effects.gradients ? 'enabled' : 'disabled');
+  root.style.setProperty('--theme-shadows', theme.effects.shadows ? 'enabled' : 'disabled');
+  root.style.setProperty('--theme-borders', theme.effects.borders ? 'enabled' : 'disabled');
+
+  // Apply theme class to body
+  document.body.className = document.body.className.replace(/theme-\w+/g, '');
+  document.body.classList.add(`theme-${theme.id}`);
+
+  // Apply layout classes
+  document.body.classList.add(`header-${theme.layout.headerStyle}`);
+  document.body.classList.add(`nav-${theme.layout.navigationStyle}`);
+  document.body.classList.add(`grid-${theme.layout.productGridStyle}`);
+  document.body.classList.add(`footer-${theme.layout.footerStyle}`);
+
+  // Apply component classes
+  document.body.classList.add(`btn-${theme.components.buttonStyle}`);
+  document.body.classList.add(`card-${theme.components.cardStyle}`);
+  document.body.classList.add(`img-${theme.components.imageStyle}`);
 };

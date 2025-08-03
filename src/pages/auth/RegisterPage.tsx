@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, ShoppingCart, User, Building } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Card from '../../components/ui/Card';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 const RegisterPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { register } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -32,7 +35,7 @@ const RegisterPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
       return;
@@ -46,12 +49,17 @@ const RegisterPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Simulate registration
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await register(formData.email, formData.password, {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        company: formData.company,
+      });
+
       toast.success('Account created successfully! Welcome to GoStore!');
       // Redirect to onboarding
-    } catch (error) {
-      toast.error('Registration failed. Please try again.');
+      navigate('/onboarding');
+    } catch (error: any) {
+      toast.error(error.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
